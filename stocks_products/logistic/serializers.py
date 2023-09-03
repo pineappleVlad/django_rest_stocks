@@ -2,6 +2,7 @@ from rest_framework import serializers
 from logistic.models import Product, Stock, StockProduct
 
 
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -30,7 +31,7 @@ class StockSerializer(serializers.ModelSerializer):
         stock = super().create(validated_data)
 
         for position in positions:
-            StockProduct.objects.get_or_create(stock=stock, **position)
+            StockProduct.objects.create(stock=stock, **position)
 
 
 
@@ -44,15 +45,7 @@ class StockSerializer(serializers.ModelSerializer):
         stock = super().update(instance, validated_data)
 
         for position in positions:
-            try:
-                stock_product = StockProduct.objects.get(stock=stock, product=position.get('product'))
-                stock_product.price = position.get('price', stock_product.price)
-                stock_product.quantity = position.get('quantity', stock_product.quantity)
-                stock_product.save()
-
-            except StockProduct.DoesNotExist:
-                StockProduct.objects.create(stock=stock, **position)
-
-
-
+            StockProduct.objects.update_or_create(stock=stock, product=position.get('product'),
+                                                  defaults={'price': position.get('price'),
+                                                            'quantity': position.get('quantity')})
         return stock
